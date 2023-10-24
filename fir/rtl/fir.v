@@ -166,13 +166,14 @@ always @(posedge axis_clk or negedge axis_rst_n)begin
     else if(config_addr == 32'h0000_0002)                   config_en <= 1'b1;
     else                                                    config_en <= 1'b0;
 end
-
+/*
 //Get data length
 always @(posedge axis_clk or negedge axis_rst_n)begin
     if(~axis_rst_n)             data_length <= 32'd0;
     else if(awaddr == 12'h10)   data_length <= wdata;
     else                        data_length <= data_length;
 end
+*/
 
 //axi-stream handshake
 //master to slave
@@ -233,14 +234,6 @@ always @(posedge axis_clk or negedge axis_rst_n)begin
     else if(state == `CAL)                                  sm_tvalid_reg <= sm_tvalid_delay;
     else                                                    sm_tvalid_reg <= sm_tvalid_reg;
 end
- 
-/*
-always @(posedge axis_clk or negedge axis_rst_n)begin
-    if(~axis_rst_n)                                         sm_tvalid_delay1 <= 1'd0;
-    else if(sm_tvalid_delay2)                               sm_tvalid_delay1 <= 1'd1;
-    else                                                    sm_tvalid_delay1 <= 1'd0;
-end
-*/
 
 always @(posedge axis_clk or negedge axis_rst_n)begin
     if(~axis_rst_n)                                         sm_tvalid_delay1 <= 1'd0;
@@ -274,13 +267,6 @@ end
 
 //read
 always @(posedge axis_clk or negedge axis_rst_n)begin
-    if(~axis_rst_n)                                         read_addr_cnt <= 4'd0;
-    else if(arvalid && rready && read_addr_cnt == 4'd0)     read_addr_cnt <=4'd1;
-    else if(arvalid && rready && read_addr_cnt == 4'd1)     read_addr_cnt <=4'd2;
-    else                                                    read_addr_cnt <= 4'd0;
-end
-
-always @(posedge axis_clk or negedge axis_rst_n)begin
     if(~axis_rst_n)                                         arready_reg <= 1'b0;
     else if(state == `DONE && arvalid & rready)             arready_reg <= 1'b1;
     else if(arvalid & !rready)                              arready_reg <= 1'b1;
@@ -313,7 +299,6 @@ end
 always @(posedge axis_clk or negedge axis_rst_n)begin
     if(~axis_rst_n)                                         tap_A_reg <= 12'b0;
     else if(state == `CAL)begin
-        //if(arready)                                         tap_A_reg <= 12'h000;
         if(!data_WE && tap_A == 12'h000)                    tap_A_reg <= 12'h000;
         else if(tap_A == 12'h028)                           tap_A_reg <= 12'h000;
         else                                                tap_A_reg <= tap_A_reg + 12'h004;
@@ -335,7 +320,6 @@ always @(posedge axis_clk or negedge axis_rst_n)begin
 end
 
 //Calculate
-//assign mul_tap = tap_Do;
 reg [(pDATA_WIDTH-1):0]         mul_tap_delay;
 reg [(pDATA_WIDTH-1):0]         mul_data_delay;
 
@@ -381,6 +365,7 @@ end
 
 always @(posedge axis_clk or negedge axis_rst_n)begin
     if(~axis_rst_n)                                         sum_cnt <= 12'd0;
+    else if(state == `COEF && sum_cnt == 12'd601)           sum_cnt <= 12'd0;
     else if(ss_tvalid & ss_tready)                          sum_cnt <= sum_cnt + 12'd1;
     else if(ss_tready && sum_cnt == 12'd600)                sum_cnt <= sum_cnt + 12'd1;
     else if(ss_tready && sum_cnt == 12'd601)                sum_cnt <= 12'd0;                  
